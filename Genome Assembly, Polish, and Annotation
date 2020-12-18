@@ -1,0 +1,39 @@
+canu -correct -p ontcor -d clean genomeSize=120m merylThreads=5 minReadLength=1000 -nanopore-raw err.fastq
+canu -trim -p trim -d trim maxThreads=8 genomeSize=120m -nanopore-corrected ontcor.correctedReads.fasta.gz
+canu -assemble -p assb -d assb maxThreads=8 genomeSize=120m -nanopore-corrected trim.trimmedReads.fasta.gz
+#highspeed 
+ flye --nano-raw ont.fq.gz --out-dir flye --genome-size 120m --threads 12
+ #2+3
+ haslr.py -t 12 -o haslr -g 120m -l ont.fq.gz --cov-lr 80 -x nanopore -s sjread_1.fq.gz sjread_2.fq.gz
+
+#Polish
+#racon 1st
+minimap2 -t 4 assembly.fasta ont.fq.gz -o err21.paf
+racon ont.fq.gz err21.paf assembly.fasta -t 12 >round1.racon.fasta
+#racon 2nd
+minimap2 -t 4 round1.racon.fasta ont.fq.gz -o round2.paf
+racon ont.fq.gz round2.paf round1.racon.fasta -t 12 >round2.racon.fasta
+#racon 3rd
+minimap2 -t 4 round2.racon.fasta ont.fq.gz -o round3.paf
+racon ont.fq.gz round3.paf round2.racon.fasta -t 12 >round3.racon.fasta
+#pilon polish
+bwa index -p racon3 round3.racon.fasta
+bwa mem -t 16 racon3 read_1.fq.gz read_2.fq.gz | samtools sort -@ 10 -O bam -o align.bam
+samtools index -@ 10 align.bam
+ #non PCR-free lib
+ sambamba markdup -t 10 align.bam align_markdup.bam 
+samtools view -@ 10 -q 30 -b align.bam > align_filter.bam
+samtools index -@ 10 align_filter.bam
+java -Xmx128G -jar pilon-1.23.jar --genome round3.racon.fasta --frags align_filter.bam --output pilon --fix all --vcf --threads 4 &> pilon.log
+#edta
+conda install -c bioconda -c conda-forge edta
+#https://github.com/oushujun/EDTA download EDTA.pl
+perl EDTA.pl --genome final.fna --sensitive 1 --anno 1 --evaluate 1 -t 12
+#conda install trf rmblat  use which trf&rpsblast to config
+./repeatmasker -pa 12 -species Arabidopsis -nolow -no_is -gff -html -dir 103 101.fas
+RepeatMasker -e ncbi -pa 8 -cutoff 250 -nolow -no_is -gff -html -dir rpmaskedta -lib 101.fna.mod.EDTA.TElib.fa 101.fas.masked
+
+#braker2
+export GENEMARK_PATH=/media/cxl/datarun/barker/gmes
+STAR --runMode genomeGenerate -genomeDir star101 --genomeFastaFiles 101.fas.masked.masked
+STAR --genomeDir GenomeDir --runThreadN 20 --readFilesIn SRR13156670_1.fastq SRR13156670_2.fastq --outFileNamePrefix 101_ --outSAMtype BAM SortedByCoordinate --outBAMsortingThreadN 10 --outSAMstrandField intronMotif mv 101.70.bam
