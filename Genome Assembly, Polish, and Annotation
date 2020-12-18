@@ -37,3 +37,4 @@ RepeatMasker -e ncbi -pa 8 -cutoff 250 -nolow -no_is -gff -html -dir rpmaskedta 
 export GENEMARK_PATH=/media/cxl/datarun/barker/gmes
 STAR --runMode genomeGenerate -genomeDir star101 --genomeFastaFiles 101.fas.masked.masked
 STAR --genomeDir GenomeDir --runThreadN 20 --readFilesIn SRR13156670_1.fastq SRR13156670_2.fastq --outFileNamePrefix 101_ --outSAMtype BAM SortedByCoordinate --outBAMsortingThreadN 10 --outSAMstrandField intronMotif mv 101.70.bam
+braker.pl --cores 20 --species=yourSpecies --genome=101.fas.masked -bam=70.bam,71.bam,72.bam,76.bam,82.bam,88.bam --gff3 --prot_seq=101protein.faa --prg=exonerate
