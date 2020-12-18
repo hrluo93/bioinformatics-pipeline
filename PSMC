@@ -1,0 +1,18 @@
+bwa index -p gma Gma.fa
+cat DES00182_L1_1_clean.rd.fq.gz DES00183_L1_1_clean.rd.fq.gz > gmar1.fastq.gz
+cat DES00182_L1_2_clean.rd.fq.gz DES00183_L1_2_clean.rd.fq.gz > gmar2.fastq.gz
+bwa mem -t 20 gma gmar1.fastq.gz gmar2.fastq.gz | samtools sort -@ 10 -O bam -o gma.bam
+bcftools mpileup -C50 -f Gma.fa gma.bam | bcftools call -c - | vcfutils.pl vcf2fq -d 10 -D 100 | gzip > gmadiploid.fq.gz
+utils/fq2psmcfa -q20 gmadiploid.fq.gz > gmadiploid.psmcfa
+cd ..
+psmc/psmc -N25 -t15 -r5 -p "4+25*2+4+6" -o gmadiploid.psmc gmadiploid.psmcfa
+utils/psmc2history.pl gmadiploid.psmc | utils/history2ms.pl > ms-cmd.sh
+utils/psmc_plot.pl -g 3 -u 3.45e-9 gma gmadiploid.psmc
+#bootstrep
+utils/fq2psmcfa -q20 gmadiploid.fq.gz > gmadiploid.psmcfa
+utils/splitfa gmadiploid.psmcfa > gmasplit.psmcfa
+cd ..
+psmc/psmc -N25 -t15 -r5 -p "4+25*2+4+6" -o gmadiploidboot.psmc gmadiploid.psmcfa 
+seq 100 | xargs -P 24 -i psmc -N25 -t15 -r5 -b -p "4+25*2+4+6" -o round-{}.psmc split.psmcfa | sh
+cat gmadiploidboot.psmc round-*.psmc > gmacombined.psmc
+utils/psmc_plot.pl -g 3 -u 3.45e-9 gmacombined gmacombined.psmc
