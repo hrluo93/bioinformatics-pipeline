@@ -34,6 +34,7 @@ perl EDTA.pl --genome final.fna --sensitive 1 --anno 1 --evaluate 1 -t 12
 RepeatMasker -e ncbi -pa 8 -cutoff 250 -nolow -no_is -gff -html -dir rpmaskedta -lib 101.fna.mod.EDTA.TElib.fa 101.fas.masked
 
 #braker2
+#Repalce $_ =~ m/transcript_id \"(.*)\"/ to $_ =~ m/transcript_id \"(.*?)\"/ in filterGenesIn_mRNAname.pl if Training gene file in genbank format */train.f.gb does not contain any training genes.
 export GENEMARK_PATH=/media/cxl/datarun/barker/gmes
 STAR --runMode genomeGenerate -genomeDir star101 --genomeFastaFiles 101.fas.masked.masked
 STAR --genomeDir GenomeDir --runThreadN 20 --readFilesIn SRR13156670_1.fastq SRR13156670_2.fastq --outFileNamePrefix 101_ --outSAMtype BAM SortedByCoordinate --outBAMsortingThreadN 10 --outSAMstrandField intronMotif mv 101.70.bam
