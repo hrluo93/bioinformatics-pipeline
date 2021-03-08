@@ -1,0 +1,9 @@
+#add the following to the PATH environment variable
+export PATH=$PATH:/your path/ParaAT2.0:$PATH
+source .bashrc
+perl ParaAT.pl -h ortho.txt -n cds.fas -a pep.fas -p proc -m muscle -f paml  -o paml_result
+#check Seqs and tree order
+cat paml_result/*.paml > test.codon
+#add title in tree file （numbers of  seq     tree numbers ）
+codeml tworatiocodeml.ctl
+codeml M0codeml.ctl
